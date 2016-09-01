@@ -1604,7 +1604,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
             dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
                 if (self.activityViewController) {
-                    [self showProgressHUDWithMessage:nil];
+                    if (self.showLoadingIndicator) [self showProgressHUDWithMessage:nil];
                 }
             });
 
@@ -1612,8 +1612,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
             typeof(self) __weak weakSelf = self;
             [self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
                 weakSelf.activityViewController = nil;
-                [weakSelf hideControlsAfterDelay];
-                [weakSelf hideProgressHUD:YES];
+                if (weakSelf.showLoadingIndicator){
+                    [weakSelf hideControlsAfterDelay];
+               	    [weakSelf hideProgressHUD:YES];
+                }
             }];
             // iOS 8 - Set the Anchor Point for the popover
             if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8")) {
