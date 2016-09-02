@@ -36,22 +36,22 @@
         _index = NSUIntegerMax;
         _photoBrowser = browser;
         
-        // Tap view for background
-        _tapView = [[MWTapDetectingView alloc] initWithFrame:self.bounds];
-        _tapView.tapDelegate = self;
-        _tapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        _tapView.backgroundColor = [UIColor blackColor];
-        [self addSubview:_tapView];
-        
-        // Image view
-        _photoImageView = [[MWTapDetectingImageView alloc] initWithFrame:CGRectZero];
-        _photoImageView.tapDelegate = self;
-        _photoImageView.contentMode = UIViewContentModeCenter;
-        _photoImageView.backgroundColor = [UIColor blackColor];
-        [self addSubview:_photoImageView];
-        
-        // Loading indicator
-        _loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 40.0f, 40.0f)];
+		// Tap view for background
+		_tapView = [[MWTapDetectingView alloc] initWithFrame:self.bounds];
+		_tapView.tapDelegate = self;
+		_tapView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		_tapView.backgroundColor = [UIColor blackColor];
+		[self addSubview:_tapView];
+
+		// Image view
+		_photoImageView = [[MWTapDetectingImageView alloc] initWithFrame:CGRectZero];
+		_photoImageView.tapDelegate = self;
+		_photoImageView.contentMode = UIViewContentModeCenter;
+		_photoImageView.backgroundColor = [UIColor blackColor];
+		[self addSubview:_photoImageView];
+		
+		// Loading indicator
+		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(140.0f, 30.0f, 40.0f, 40.0f)];
         _loadingIndicator.userInteractionEnabled = NO;
         _loadingIndicator.thicknessRatio = 0.1;
         _loadingIndicator.roundedCorners = NO;
@@ -120,60 +120,65 @@
         // Will be loading so show loading
         if (_photoBrowser.showLoadingIndicator){
             [self showLoadingIndicator];
-        } else {
-            [self hideLoadingIndicator];
         }
     }
 }
 
 // Get and display image
 - (void)displayImage {
-    if (_photo && _photoImageView.image == nil) {
-        
+    [self displayPhoto:_photo andShowFailureImageIfFails:YES];
+}
+
+- (void)displayPlaceholderImage {
+    if (_photoImageView.image == nil) {
+        [self displayPhoto:_photo andShowFailureImageIfFails:NO];
+    }
+}
+
+- (void)displayPhoto:(MWPhoto *)photo andShowFailureImageIfFails:(BOOL)needsFailureImage {
+    if (photo) {
+
         // Reset
         self.maximumZoomScale = 1;
         self.minimumZoomScale = 1;
         self.zoomScale = 1;
         self.contentSize = CGSizeMake(0, 0);
-        
+
         // Get image from browser as it handles ordering of fetching
-        UIImage *img = [_photoBrowser imageForPhoto:_photo];
+        UIImage *img = [_photoBrowser imageForPhoto:photo];
         if (img) {
-            
+
             // Hide indicator
-            if (_photoBrowser.showLoadingIndicator)[self hideLoadingIndicator];
-            
+            [self hideLoadingIndicator];
+
             // Set image
             _photoImageView.image = img;
             _photoImageView.hidden = NO;
-            
+
             // Setup photo frame
             CGRect photoImageViewFrame;
             photoImageViewFrame.origin = CGPointZero;
             photoImageViewFrame.size = img.size;
             _photoImageView.frame = photoImageViewFrame;
             self.contentSize = photoImageViewFrame.size;
-            
+
             // Set zoom to minimum zoom
             [self setMaxMinZoomScalesForCurrentBounds];
-            
-        } else  {
-            
+        } else if (needsFailureImage && !_photoImageView.image) {
             // Show image failure
             [self displayImageFailure];
-            
         }
+
         [self setNeedsLayout];
     }
 }
 
 // Image failed so just show black!
 - (void)displayImageFailure {
-    if (_photoBrowser.showLoadingIndicator)[self hideLoadingIndicator];
-    _photoImageView.image = nil;
-    
+    [self hideLoadingIndicator];
+
     // Show if image is not empty
-    if (![_photo respondsToSelector:@selector(emptyImage)] || !_photo.emptyImage) {
+    if (_photoImageView.image == nil && (![_photo respondsToSelector:@selector(emptyImage)] || !_photo.emptyImage)) {
         if (!_loadingError) {
             _loadingError = [UIImageView new];
             _loadingError.image = [UIImage imageForResourcePath:@"MWPhotoBrowser.bundle/ImageError" ofType:@"png" inBundle:[NSBundle bundleForClass:[self class]]];
